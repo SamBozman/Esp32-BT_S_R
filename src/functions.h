@@ -1,6 +1,46 @@
 #pragma once
 #include "globals.h"
-int stepper;
+// int stepper; ??
+
+void homeStepper(AccelStepper Stepper, int homePin)
+{
+   int move_finished = 1;    // Used to check if move is completed
+   long initial_homing = -1; // Used to Home Stepper at startup
+   pinMode(homePin, INPUT_PULLUP);
+   Stepper.setMaxSpeed(100);
+   Stepper.setAcceleration(100.0);
+
+   Serial.print("Stepper is Homing ");
+   Serial.print("Micro Switch is: ");
+   Serial.println(digitalRead(homePin));
+
+   while (digitalRead(homePin)) // Do WHILE switch not activated (NOT true)
+   {
+      Serial.print("Micro Switch is: ");
+      Serial.println(digitalRead(homePin)); // Make the Stepper move CCW until the switch is activated
+      Stepper.moveTo(initial_homing);       // Set the position to move to
+      initial_homing--;                     // Decrease by 1 for next move if needed
+      Stepper.run();                        // Start moving the stepper
+      delay(5);
+   }
+
+   Stepper.setCurrentPosition(0);  // Set the current position as zero for now
+   Stepper.setMaxSpeed(100.0);     // Set Max Speed of Stepper (Slower to get better accuracy)
+   Stepper.setAcceleration(100.0); // Set Acceleration of Stepper
+   initial_homing = 1;
+
+   while (!digitalRead(homePin))
+   { // Make the Stepper move CW until the switch is deactivated
+      Stepper.moveTo(initial_homing);
+      Stepper.run();
+      initial_homing++;
+      delay(5);
+   }
+
+   Stepper.setCurrentPosition(0);
+   Serial.println("Homing Completed");
+   Serial.println("");
+}
 
 void processIncoming(float incoming)
 {
